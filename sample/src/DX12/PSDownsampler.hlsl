@@ -1,29 +1,12 @@
-// SPDSample
-//
-// Copyright (c) 2020 Advanced Micro Devices, Inc. All rights reserved.
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+﻿// SPDSample
 
 //--------------------------------------------------------------------------------------
 // Constant Buffer
 //--------------------------------------------------------------------------------------
 cbuffer cbPerFrame : register(b0)
 {
-    float2 u_outSize;
-    float2 u_invSize;
+    float2 u_outSize; //目标 mip 的尺寸
+    float2 u_invSize; //源 mip 尺寸的倒数
 }
 
 //--------------------------------------------------------------------------------------
@@ -37,7 +20,7 @@ struct VERTEX
 //--------------------------------------------------------------------------------------
 // Texture definitions
 //--------------------------------------------------------------------------------------
-Texture2D        inputTex         :register(t0);
+Texture2D        inputTex         :register(t0);    //当前作为“源”的 mip
 SamplerState     samLinear        :register(s0);
 
 //--------------------------------------------------------------------------------------
@@ -47,7 +30,7 @@ SamplerState     samLinear        :register(s0);
 float4 mainPS(VERTEX Input) : SV_Target
 {
     // as compute shader solution
-    float2 texCoord = Input.vTexcoord * u_outSize;
-    texCoord = texCoord * u_invSize * 2.0;
-    return inputTex.Sample(samLinear, texCoord);
+    float2 texCoord = Input.vTexcoord * u_outSize;  //得到在输出纹理上的位置
+    texCoord = texCoord * u_invSize * 2.0;          //映射到输入纹理上[0-1] 
+    return inputTex.Sample(samLinear, texCoord); //恰好落在源纹理中 2×2 像素块的中心点，由于采样器是线性滤波且 MIP 选择是 point（不跨 mip），在这个“2×2块中心”采样会对四个相邻像素以 0.25 权重各取一次并线性混合，正好等价于2×2平均。
 }
